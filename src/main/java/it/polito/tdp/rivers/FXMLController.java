@@ -74,7 +74,7 @@ public class FXMLController {
     	}
     	this.model.init(model.getFlowsPerRiver(this.boxRiver.getValue()), Double.parseDouble(this.txtK.getText()));
     	this.model.run();
-    	this.txtResult.setText("GIORNI DI DISSERVIZIO: "+this.model.getGiorniSenzaIrrigazione()+"\n"+"IL FLUSSO MEDIO PER IL FIUME "+this.boxRiver.getValue().getName()+" è: "+this.model.getCMedia());    		
+    	this.txtResult.setText("GIORNI DI DISSERVIZIO: "+this.model.getGiorniSenzaIrrigazione()+"\n"+"IL FLUSSO MEDIO PER IL FIUME "+this.boxRiver.getValue().getName()+" è: "+this.model.getCMedia(model.getFlowsPerRiver(this.boxRiver.getValue())));    		
     }
     
     @FXML // This method is called by the FXMLLoader when initialization is complete

@@ -41,8 +41,8 @@ public class RiversDAO {
 	
 	public List<Flow> getAllFlows(River river){
 		final String sql = "SELECT f.day,f.flow "
-				+ "FROM flow f, river r "
-				+ "WHERE f.river=r.id AND r.id=? "
+				+ "FROM flow f "
+				+ "WHERE f.river=? "
 				+ "ORDER BY f.day ASC";
 
 		List<Flow> flows = new ArrayList<>();

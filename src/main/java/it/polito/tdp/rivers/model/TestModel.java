@@ -11,12 +11,12 @@ public class TestModel {
 			if(r.getId()==2)
 				river=r;
 		}
-		List<Flow> flows=model.getFlowsPerRiver(river);
-		System.out.println("Fmed: "+model.getMedia(flows));
-		model.init(flows, 20);
+		System.out.println("Fmed: "+model.getMedia(model.getFlowsPerRiver(river))*3600*24);
+		model.init(model.getFlowsPerRiver(river), 0.5);
 		model.run();
 		System.out.println("GIORNI: "+model.getGiorniSenzaIrrigazione());
-		System.out.println("CMedia: "+model.getCMedia());
+		System.out.println("GIORNI TOTALI: "+model.getFlowsPerRiver(river).size());
+		System.out.println("CMedia: "+model.getCMedia(model.getFlowsPerRiver(river)));
 
 	}
 

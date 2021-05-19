@@ -13,17 +13,19 @@ public class Event implements Comparable<Event>{
 	}
 	private LocalDate day;
 	private EventType type;
+	private Flow flow;
 	
-	public Event(LocalDate day, EventType type) {
+	public Event(LocalDate day, EventType type, Flow flow) {
 		this.day = day;
 		this.type = type;
+		this.flow=flow;
 	}
 
 	public LocalDate getDay() {
 		return day;
 	}
 
-	public void setTime(LocalDate day) {
+	public void setDay(LocalDate day) {
 		this.day = day;
 	}
 
@@ -33,6 +35,14 @@ public class Event implements Comparable<Event>{
 
 	public void setType(EventType type) {
 		this.type = type;
+	}
+	
+	public Flow getFlow() {
+		return flow;
+	}
+
+	public void setFlow(Flow flow) {
+		this.flow = flow;
 	}
 
 	@Override

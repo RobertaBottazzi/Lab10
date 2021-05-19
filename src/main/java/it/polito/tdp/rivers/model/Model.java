@@ -1,10 +1,7 @@
 package it.polito.tdp.rivers.model;
 
-import java.time.Duration;
+
 import java.time.LocalDate;
-import java.time.Period;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -15,7 +12,6 @@ import it.polito.tdp.rivers.model.Event.EventType;
 public class Model {
 	private RiversDAO dao;
 	private List<River> rivers;
-	private List<Flow> flows;
 	
 	//definisco gli eventi
 	private PriorityQueue<Event> queue;
@@ -28,47 +24,39 @@ public class Model {
 	//stato del mondo
 	private double flussoIn;
 	private double flussoOut;
+	private double fMed;
 	
 	
 	//durata eventi
-	private int T_IN=1;  //intervallo entrata acqua e uscita, ogni giorno, utilizzo LocalDate.plusDays() 
-						//per incrementare di un giorno	
+  //intervallo entrata acqua e uscita, ogni giorno, utilizzo quindi la data del flusso	
 	//parametri in uscita
-	private int giorniSenzaIrogazioneMinima;
-	private int CMedia;
+	private int giorniSenzaIrrigazioneMinima;
+	private double CMedia;
 	
 	//durata simulazione
-	private LocalDate start;
-	private LocalDate end;
+	//data dalla dimensione della List<Flow> trovata per un fiume
 	
 	
 	public Model() {
 		dao=new RiversDAO();
 		rivers=dao.getAllRivers();
-		flows= new ArrayList<>();
 	}
 	
 	public void init(List<Flow> flow, double k) {
 		queue= new PriorityQueue<>();
 		
-		this.Q=k*this.getMedia(flow)*3600*24*30; //conversione di fmed da m^3/s a m^3/giorno e poi *30 come detto da testo
+		this.fMed=this.getMedia(flow)*3600*24;
+		this.Q=k*this.fMed*30;  //conversione di fmed da m^3/s a m^3/giorno e poi *30 come detto da testo
+		System.out.println("Q: "+this.Q);
 		this.C=this.Q/2;
-		this.flussoOutMin=0.8*this.getMedia(flow)*3600*24;
+		System.out.println("C: "+this.C);
+		this.flussoOutMin=0.8*this.fMed;
+		System.out.println("FLUSSO OUT MIN: "+this.flussoOutMin);
 		this.flussoOut=0;
-		this.giorniSenzaIrogazioneMinima=0;
+		this.giorniSenzaIrrigazioneMinima=0;
 		this.CMedia=0;
-		this.start=flow.get(0).getDay();
-		this.end=flow.get(flow.size()-1).getDay();
-		LocalDate oggi=this.start;
-		while(oggi.isBefore(end)) {
-			this.flussoIn=this.getFlowByDate(flow, oggi)*3600*24; //conversione in m^3/giorno
-			this.queue.add(new Event(oggi,EventType.ENTRATA));
-			double n=Math.random()*10;
-			if(n<0.5) 
-				this.queue.add(new Event(oggi,EventType.IRRIGAZIONE));
-			else
-				this.queue.add(new Event(oggi,EventType.USCITA));
-			oggi=oggi.plusDays(T_IN);
+		for(Flow f: flow) {
+			this.queue.add(new Event(f.getDay(),EventType.ENTRATA,f));
 		}
 		
 	}
@@ -76,8 +64,8 @@ public class Model {
 	public void run() {
 		while(!this.queue.isEmpty()) {
 			Event e= this.queue.poll(); //finchè la coda è vuota estraggo l'evento e lo gestisco
-			System.out.println(e);
 			processEvent(e);
+			//System.out.println(e);
 		}
 	}
 	
@@ -85,9 +73,15 @@ public class Model {
 		LocalDate oggi=e.getDay();
 		switch(e.getType()) {
 		case ENTRATA:
-			this.C+=this.flussoIn;			
+			this.flussoIn=e.getFlow().getFlow()*3600*24;  //conversione in m^3/giorno
+			this.C+=this.flussoIn;	
 			if(this.C>this.Q)
-				this.queue.add(new Event(oggi,EventType.TRACIMAZIONE));			
+				this.queue.add(new Event(oggi,EventType.TRACIMAZIONE,e.getFlow()));
+			double n=Math.random()*10;
+			if(n<0.5) 
+				this.queue.add(new Event(e.getDay(),EventType.IRRIGAZIONE,e.getFlow()));
+			else
+				this.queue.add(new Event(e.getDay(),EventType.USCITA,e.getFlow()));
 			break;
 		case USCITA:
 			if(this.C>this.flussoOutMin) {
@@ -95,7 +89,7 @@ public class Model {
 				this.CMedia+=this.C;
 			}
 			else {
-				this.giorniSenzaIrogazioneMinima++;
+				this.giorniSenzaIrrigazioneMinima++;
 				this.C=0;
 				this.CMedia+=this.C;
 			}
@@ -107,7 +101,7 @@ public class Model {
 				this.CMedia+=this.C;
 			}
 			else {
-				this.giorniSenzaIrogazioneMinima++;
+				this.giorniSenzaIrrigazioneMinima++;
 				this.C=0;
 				this.CMedia+=this.C;
 			}
@@ -120,23 +114,8 @@ public class Model {
 		
 	}
 	
-	private double getFlowByDate(List<Flow> flows, LocalDate data) {
-		double flusso = 0;
-		for(Flow f: flows) {
-			if(f.getDay().equals(data))
-				flusso=f.getFlow();			
-		}
-		return flusso;
-	}
-	
 	public List<Flow> getFlowsPerRiver(River river){
-		River fiume=null;
-		for(River r:rivers) {
-			if(r.getId()==river.getId())
-				fiume=r;
-		}
-		flows.addAll(dao.getAllFlows(fiume));
-		return flows;
+		return dao.getAllFlows(river);
 	}
 	
 	public List<River> getRivers(){
@@ -153,12 +132,12 @@ public class Model {
 	}
 	
 	public int getGiorniSenzaIrrigazione() {
-		return this.giorniSenzaIrogazioneMinima;
+		return this.giorniSenzaIrrigazioneMinima;
 	}
 	
-	public double getCMedia() {
-		long i=ChronoUnit.DAYS.between(this.start, this.end);
-		System.out.println("DIFFERENZA GIORNI: "+i);
-		return this.CMedia/i;
+	public double getCMedia(List<Flow> flow) {
+		//long i=ChronoUnit.DAYS.between(this.start, this.end);
+		//System.out.println("DIFFERENZA GIORNI: "+i);
+		return this.CMedia/flow.size();
 	}
 }
